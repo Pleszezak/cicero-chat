@@ -546,20 +546,37 @@
     }
 
     function highlightActiveAdvisors(response) {
-      // Reset all
+      // Reset all except CÍCERO
       document.querySelectorAll('.avatar-container').forEach(container => {
-        container.classList.remove('active');
+        if (container.dataset.name !== 'CÍCERO') {
+          container.classList.remove('active');
+        }
       });
       
-      // Always highlight CÍCERO
+      // Always keep CÍCERO highlighted
       document.querySelector('[data-name="CÍCERO"]').classList.add('active');
       
-      // Highlight mentioned advisors
-      const advisorNames = ['Reid Hoffman', 'Andy Grove', 'Satya Nadella', 'Marc Benioff', 'Jensen Huang', 'Jamie Dimon', 'Oprah Winfrey', 'Carlos Slim'];
+      // Only highlight if explicitly mentioned with emoji/identifier
+      const advisorMentions = [
+        { name: 'Reid Hoffman', indicators: ['🌐', 'Reid'] },
+        { name: 'Andy Grove', indicators: ['⚡', 'Andy'] },
+        { name: 'Satya Nadella', indicators: ['🔄', 'Satya'] },
+        { name: 'Marc Benioff', indicators: ['💼', 'Marc'] },
+        { name: 'Jensen Huang', indicators: ['🚀', 'Jensen'] },
+        { name: 'Jamie Dimon', indicators: ['🏛️', 'Jamie'] },
+        { name: 'Oprah Winfrey', indicators: ['📺', 'Oprah'] },
+        { name: 'Carlos Slim', indicators: ['🌎', 'Carlos'] }
+      ];
       
-      advisorNames.forEach(name => {
-        if (response.includes(name) || response.includes(name.split(' ')[0])) {
-          const container = document.querySelector(`[data-name="${name}"]`);
+      advisorMentions.forEach(advisor => {
+        const mentioned = advisor.indicators.some(indicator => 
+          response.includes(`🎯 **${indicator}`) || 
+          response.includes(`🎯 ${indicator}`) ||
+          response.includes(`**${advisor.name}**`)
+        );
+        
+        if (mentioned) {
+          const container = document.querySelector(`[data-name="${advisor.name}"]`);
           if (container) {
             container.classList.add('active');
           }
