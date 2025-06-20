@@ -88,10 +88,15 @@
       const input = document.getElementById('userInput').value;
       const responseDiv = document.getElementById('response');
 
+      if (!input.trim()) {
+        responseDiv.textContent = "Por favor, digite uma pergunta.";
+        return;
+      }
+
       responseDiv.textContent = "CÍCERO está pensando...";
 
       try {
-        const res = await fetch('https://hook.us2.make.com/6060fshpzvbq4326n7v6l7g7ctvd', {
+        const res = await fetch('https://hook.us2.make.com/6066fshpzvbq4326n7v6lg7f7ctvd', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
