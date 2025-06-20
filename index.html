@@ -468,14 +468,13 @@
     let messageHistory = [];
     let activeAdvisors = ['CÍCERO'];
     
-    // Thread persistence - NOVA FUNCIONALIDADE
+    // Thread persistence - FUNCIONALIDADE CORRIGIDA
     let currentThreadId = localStorage.getItem("cicero_thread_id");
 
     if (!currentThreadId) {
-      // Cria thread única baseada em timestamp
-      currentThreadId = "thread_cicero_" + Date.now();
-      localStorage.setItem("cicero_thread_id", currentThreadId);
-      console.log("Nova thread criada:", currentThreadId);
+      // Inicia sem thread - será criada na primeira mensagem
+      currentThreadId = null;
+      console.log("Primeira sessão - thread será criada automaticamente");
     } else {
       console.log("Thread recuperada:", currentThreadId);
     }
@@ -483,8 +482,12 @@
     // Mostra thread ID na interface
     function updateThreadInfo() {
       const threadInfo = document.getElementById('threadInfo');
-      const shortId = currentThreadId.substring(0, 25) + "...";
-      threadInfo.textContent = `Thread: ${shortId} (Conversa persistente)`;
+      if (currentThreadId) {
+        const shortId = currentThreadId.substring(0, 25) + "...";
+        threadInfo.textContent = `Thread: ${shortId} (Conversa persistente)`;
+      } else {
+        threadInfo.textContent = "Thread: Nova conversa será iniciada";
+      }
     }
 
     function updateStatus(message, isActive = false) {
@@ -576,10 +579,10 @@
     }
 
     function createNewThread() {
-      currentThreadId = "thread_cicero_" + Date.now();
-      localStorage.setItem("cicero_thread_id", currentThreadId);
+      currentThreadId = null;
+      localStorage.removeItem("cicero_thread_id");
       updateThreadInfo();
-      console.log("Nova thread criada:", currentThreadId);
+      console.log("Thread resetada - nova thread será criada");
     }
 
     function resetActiveAdvisors() {
@@ -651,7 +654,19 @@
       showTypingIndicator();
 
       try {
-        console.log("Enviando mensagem com thread:", currentThreadId);
+        console.log("Enviando mensagem com thread:", currentThreadId || "nova thread");
+        
+        // Prepare request payload
+        const payload = { 
+          message: message,
+          timestamp: new Date().toISOString(),
+          source: 'cicero-chat'
+        };
+        
+        // Only add thread_id if we have one
+        if (currentThreadId) {
+          payload.thread_id = currentThreadId;
+        }
         
         const response = await fetch('https://hook.us2.make.com/o606fshpzvbq4326n7w67lg77ctwfmb3', {
           method: 'POST',
@@ -659,12 +674,7 @@
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ 
-            message: message,
-            thread_id: currentThreadId,
-            timestamp: new Date().toISOString(),
-            source: 'cicero-chat'
-          })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -679,11 +689,27 @@
         
         // Clean response
         let cleanResponse = data;
+        let newThreadId = null;
+        
         try {
           const jsonData = JSON.parse(data);
           cleanResponse = jsonData.reply || jsonData.content || jsonData.message || data;
+          newThreadId = jsonData.thread_id;
         } catch (e) {
           cleanResponse = data;
+          // Extract thread_id from text if JSON parsing fails
+          const threadMatch = data.match(/thread_[a-zA-Z0-9]+/);
+          if (threadMatch) {
+            newThreadId = threadMatch[0];
+          }
+        }
+        
+        // Update thread ID if we got a new one
+        if (newThreadId && newThreadId !== currentThreadId) {
+          currentThreadId = newThreadId;
+          localStorage.setItem("cicero_thread_id", currentThreadId);
+          updateThreadInfo();
+          console.log("Thread atualizada para:", currentThreadId);
         }
         
         // Clean up JSON artifacts
@@ -693,7 +719,8 @@
           .replace(/^{"type":"text","text":{"value":"/, '')
           .replace(/","annotations":\[\]}}$/, '')
           .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"');
+          .replace(/\\"/g, '"')
+          .replace(/thread_[a-zA-Z0-9]+/g, ''); // Remove thread IDs from display text
         
         addMessage(cleanResponse);
         highlightActiveAdvisors(cleanResponse);
