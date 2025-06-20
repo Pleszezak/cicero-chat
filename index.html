@@ -695,7 +695,7 @@
         // Hide typing
         hideTypingIndicator();
         
-        // 🔄 RESPONSE PROCESSING
+        // 🔄 RESPONSE PROCESSING - AJUSTES IMPLEMENTADOS
         let cleanResponse = rawData;
         let receivedThreadId = null;
         
@@ -704,7 +704,8 @@
           const jsonData = JSON.parse(rawData);
           console.log("JSON parseado:", jsonData);
           
-          cleanResponse = jsonData.reply || jsonData.content || jsonData.message || rawData;
+          // ✅ AJUSTE 1: Centralizando apenas em "reply" e "thread_id"
+          cleanResponse = jsonData.reply || rawData;
           receivedThreadId = jsonData.thread_id;
           
           console.log("Resposta limpa:", cleanResponse);
@@ -719,8 +720,6 @@
             receivedThreadId = threadMatch[0];
             console.log("Thread ID extraído do texto:", receivedThreadId);
           }
-          
-          cleanResponse = rawData;
         }
         
         // 🔄 THREAD UPDATE
@@ -728,16 +727,14 @@
           updateThreadId(receivedThreadId);
         }
         
-        // 🧹 RESPONSE CLEANING
+        // 🧹 RESPONSE CLEANING - AJUSTES IMPLEMENTADOS
+        // ✅ AJUSTE 2: Limpeza leve apenas para fallback de texto bruto
         cleanResponse = cleanResponse
           .replace(/^{"reply":"/, '')
-          .replace(/"annotations":\[\]}$/, '')
-          .replace(/^{"type":"text","text":{"value":"/, '')
           .replace(/","annotations":\[\]}}$/, '')
           .replace(/\\n/g, '\n')
           .replace(/\\"/g, '"')
           .replace(/thread_[a-zA-Z0-9]+/g, '')
-          .replace(/,"annotations":\[\]}/g, '')
           .trim();
         
         addMessage(cleanResponse);
