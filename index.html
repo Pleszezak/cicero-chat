@@ -329,6 +329,17 @@
     .typing-dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
+    .thread-info {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      color: #1565c0;
+      text-align: center;
+    }
+
     @keyframes typing {
       0%, 60%, 100% { opacity: 0.3; }
       30% { opacity: 1; }
@@ -378,6 +389,10 @@
     </div>
     
     <div class="chat-section">
+      <div class="thread-info" id="threadInfo">
+        Thread: Carregando...
+      </div>
+      
       <div class="status-bar" id="statusBar">
         CÍCERO ativo - Como posso orquestrar seu conselho hoje?
       </div>
@@ -452,6 +467,25 @@
     let isProcessing = false;
     let messageHistory = [];
     let activeAdvisors = ['CÍCERO'];
+    
+    // Thread persistence - NOVA FUNCIONALIDADE
+    let currentThreadId = localStorage.getItem("cicero_thread_id");
+
+    if (!currentThreadId) {
+      // Cria thread única baseada em timestamp
+      currentThreadId = "thread_cicero_" + Date.now();
+      localStorage.setItem("cicero_thread_id", currentThreadId);
+      console.log("Nova thread criada:", currentThreadId);
+    } else {
+      console.log("Thread recuperada:", currentThreadId);
+    }
+
+    // Mostra thread ID na interface
+    function updateThreadInfo() {
+      const threadInfo = document.getElementById('threadInfo');
+      const shortId = currentThreadId.substring(0, 25) + "...";
+      threadInfo.textContent = `Thread: ${shortId} (Conversa persistente)`;
+    }
 
     function updateStatus(message, isActive = false) {
       const statusEl = document.getElementById('statusBar');
@@ -534,7 +568,18 @@
         messageHistory = [];
         resetActiveAdvisors();
         updateStatus('CÍCERO ativo - Pronto para nova conversa');
+        
+        // Opção: criar nova thread ou manter a mesma
+        // Descomente a linha abaixo se quiser nova thread a cada "limpar"
+        // createNewThread();
       }
+    }
+
+    function createNewThread() {
+      currentThreadId = "thread_cicero_" + Date.now();
+      localStorage.setItem("cicero_thread_id", currentThreadId);
+      updateThreadInfo();
+      console.log("Nova thread criada:", currentThreadId);
     }
 
     function resetActiveAdvisors() {
@@ -606,6 +651,8 @@
       showTypingIndicator();
 
       try {
+        console.log("Enviando mensagem com thread:", currentThreadId);
+        
         const response = await fetch('https://hook.us2.make.com/o606fshpzvbq4326n7w67lg77ctwfmb3', {
           method: 'POST',
           headers: {
@@ -614,6 +661,7 @@
           },
           body: JSON.stringify({ 
             message: message,
+            thread_id: currentThreadId,
             timestamp: new Date().toISOString(),
             source: 'cicero-chat'
           })
@@ -624,6 +672,7 @@
         }
 
         const data = await response.text();
+        console.log("Resposta recebida:", data);
         
         // Hide typing
         hideTypingIndicator();
@@ -651,6 +700,7 @@
         updateStatus('Conselho orquestrado com sucesso!');
 
       } catch (error) {
+        console.error("Erro na requisição:", error);
         hideTypingIndicator();
         addMessage(`Erro: ${error.message}. Tente novamente.`);
         updateStatus('Erro na comunicação');
@@ -685,6 +735,7 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+      updateThreadInfo();
       document.getElementById('messageInput').focus();
     });
   </script>
