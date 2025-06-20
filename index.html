@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cicero-chat - Interface para CÍCERO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
+            line-height: 1.5;
+        }
+
+        .header {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 16px 24px;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .repo-name {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        .repo-name:hover {
+            text-decoration: underline;
+        }
+
+        .public-badge {
+            background-color: #1f6feb;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .main-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .repo-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .repo-icon {
+            color: #7d8590;
+            width: 20px;
+            height: 20px;
+        }
+
+        .repo-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        .repo-description {
+            color: #7d8590;
+            margin-left: 32px;
+            margin-bottom: 24px;
+        }
+
+        .content-section {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .file-header {
+            background-color: #21262d;
+            border-bottom: 1px solid #30363d;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-icon {
+            color: #7d8590;
+            width: 16px;
+            height: 16px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #e6edf3;
+        }
+
+        .content-body {
+            padding: 40px;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .cicero-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #e6edf3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .cicero-subtitle {
+            font-size: 20px;
+            color: #58a6ff;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .cicero-description {
+            font-size: 16px;
+            color: #7d8590;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .chat-area {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 40px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .chat-placeholder {
+            color: #7d8590;
+            font-size: 18px;
+            margin-bottom: 24px;
+        }
+
+        .chat-example {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            color: #79c0ff;
+            font-size: 14px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .chat-example:hover {
+            border-color: #58a6ff;
+        }
+
+        .board-section {
+            margin-top: 40px;
+        }
+
+        .board-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e6edf3;
+            margin-bottom: 24px;
+        }
+
+        .board-avatars {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 24px;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+        }
+
+        .avatar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #30363d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #161b22 0%, #21262d 100%);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .avatar-container:hover .avatar {
+            border-color: #58a6ff;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(88, 166, 255, 0.2);
+        }
+
+        .avatar-container.active .avatar {
+            border-color: #58a6ff;
+            background: linear-gradient(135deg, #1f6feb 0%, #58a6ff 100%);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(88, 166, 255, 0.3);
+        }
+
+        .avatar-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #e6edf3;
+            text-align: center;
+            max-width: 80px;
+            line-height: 1.2;
+        }
+
+        .avatar-container.active .avatar-name {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .cicero-title {
+                font-size: 36px;
+            }
+            
+            .board-avatars {
+                gap: 16px;
+            }
+            
+            .avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 16px;
+            }
+            
+            .avatar-name {
+                font-size: 11px;
+                max-width: 60px;
+            }
+            
+            .content-body {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="header-nav">
+            <a href="#" class="repo-name">🧠 cicero-chat</a>
+            <span class="public-badge">Public</span>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="repo-header">
+            <svg class="repo-icon" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z"/>
+            </svg>
+            <a href="#" class="repo-title">cicero-chat</a>
+        </div>
+
+        <p class="repo-description">
+            Interface para interagir com o agente CÍCERO — o Orquestrador Estratégico
+        </p>
+
+        <div class="content-section">
+            <div class="file-header">
+                <svg class="file-icon" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M3.75 2h3.5a.75.75 0 010 1.5h-3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-3.5a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2z"/>
+                    <path d="M6.414 9.414l8-8a1 1 0 011.414 1.414l-8 8a1 1 0 01-1.414-1.414z"/>
+                </svg>
+                <span class="file-name">index.html</span>
+            </div>
+
+            <div class="content-body">
+                <div class="hero-section">
+                    <h1 class="cicero-title">
+                        🧠 CÍCERO
+                    </h1>
+                    <p class="cicero-subtitle">O Orquestrador Estratégico</p>
+                    <p class="cicero-description">
+                        Conselho virtual de alta performance que orquestra decisões estratégicas através de múltiplas perspectivas dos maiores líderes e pensadores do mundo dos negócios e tecnologia.
+                    </p>
+                </div>
+
+                <div class="chat-area">
+                    <div class="chat-placeholder">
+                        💬 Área de conversação com o CÍCERO
+                    </div>
+                    <div class="chat-example">
+                        "Cícero, direto ao board sobre expansão para Miami"
+                    </div>
+                    <div class="chat-example">
+                        "Cícero, convoque Reid + Jensen + Jamie para decisão de investimento"
+                    </div>
+                    <div class="chat-example">
+                        "Cícero, análise Brasil vs EUA para este projeto"
+                    </div>
+                </div>
+
+                <div class="board-section">
+                    <h2 class="board-title">👥 Board de Conselheiros</h2>
+                    <div class="board-avatars">
+                        <div class="avatar-container active">
+                            <div class="avatar">🎯</div>
+                            <div class="avatar-name">CÍCERO</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">🌐</div>
+                            <div class="avatar-name">Reid Hoffman</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">⚡</div>
+                            <div class="avatar-name">Andy Grove</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">🔄</div>
+                            <div class="avatar-name">Satya Nadella</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">💼</div>
+                            <div class="avatar-name">Marc Benioff</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">🚀</div>
+                            <div class="avatar-name">Jensen Huang</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">🏛️</div>
+                            <div class="avatar-name">Jamie Dimon</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">📺</div>
+                            <div class="avatar-name">Oprah Winfrey</div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar">🌎</div>
+                            <div class="avatar-name">Carlos Slim</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Interatividade dos avatares
+        document.querySelectorAll('.avatar-container').forEach(container => {
+            container.addEventListener('click', function() {
+                // Remove active de todos
+                document.querySelectorAll('.avatar-container').forEach(c => c.classList.remove('active'));
+                // Adiciona active no clicado
+                this.classList.add('active');
+            });
+        });
+
+        // Interatividade dos exemplos de chat
+        document.querySelectorAll('.chat-example').forEach(example => {
+            example.addEventListener('click', function() {
+                // Aqui você pode adicionar lógica para usar o comando
+                console.log('Comando selecionado:', this.textContent);
+            });
+        });
+    </script>
+</body>
+</html>
