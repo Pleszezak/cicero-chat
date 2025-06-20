@@ -232,6 +232,18 @@
       color: #0c5460;
     }
 
+    .debug-info {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      color: #1565c0;
+      text-align: center;
+      font-family: monospace;
+    }
+
     /* Board Section */
     .board-section {
       background: white;
@@ -385,6 +397,10 @@
     </div>
     
     <div class="chat-section">
+      <div class="debug-info" id="debugInfo">
+        Iniciando thread persistence...
+      </div>
+      
       <div class="status-bar" id="statusBar">
         CÍCERO ativo - Como posso orquestrar seu conselho hoje?
       </div>
@@ -459,15 +475,34 @@
     let isProcessing = false;
     let messageHistory = [];
     let activeAdvisors = ['CÍCERO'];
-    
-    // SOLUÇÃO ESTRUTURADA - Thread ID Fixo
-    let threadId = localStorage.getItem("cicero_thread_id");
-    if (!threadId) {
-      threadId = "thread_Nh1rINsaJwC6WfzoELVql1N"; // Thread ID fixo conhecido
-      localStorage.setItem("cicero_thread_id", threadId);
-      console.log("Thread ID fixo definido:", threadId);
-    } else {
-      console.log("Thread ID recuperado:", threadId);
+    let currentThreadId = null;
+
+    // 🎯 THREAD PERSISTENCE SYSTEM
+    function initializeThread() {
+      // Primeira tentativa: recuperar thread existente
+      currentThreadId = localStorage.getItem("cicero_thread_id");
+      
+      if (currentThreadId) {
+        console.log("Thread recuperada:", currentThreadId);
+        updateDebugInfo(`Thread recuperada: ${currentThreadId.substring(0, 25)}...`);
+      } else {
+        console.log("Nova sessão - thread será criada na primeira mensagem");
+        updateDebugInfo("Nova sessão - thread será criada automaticamente");
+      }
+    }
+
+    function updateThreadId(newThreadId) {
+      if (newThreadId && newThreadId !== currentThreadId) {
+        currentThreadId = newThreadId;
+        localStorage.setItem("cicero_thread_id", currentThreadId);
+        console.log("Thread atualizada para:", currentThreadId);
+        updateDebugInfo(`Thread ativa: ${currentThreadId.substring(0, 25)}...`);
+      }
+    }
+
+    function updateDebugInfo(message) {
+      const debugEl = document.getElementById('debugInfo');
+      debugEl.textContent = message;
     }
 
     function updateStatus(message, isActive = false) {
@@ -541,7 +576,7 @@
     }
 
     function clearChat() {
-      if (confirm('Limpar histórico da conversa?')) {
+      if (confirm('Limpar histórico da conversa? (A thread será mantida)')) {
         document.getElementById('chatMessages').innerHTML = `
           <div class="welcome-placeholder">
             💭 <strong>Chat limpo!</strong><br>
@@ -623,43 +658,77 @@
       showTypingIndicator();
 
       try {
-        console.log("Enviando mensagem com thread ID fixo:", threadId);
+        // 📋 PAYLOAD CONFIGURATION
+        const payload = { 
+          message: message,
+          timestamp: new Date().toISOString(),
+          source: 'cicero-chat'
+        };
         
-        // SOLUÇÃO ESTRUTURADA - Envio do Thread ID fixo
+        // ⚡ THREAD MANAGEMENT
+        if (currentThreadId) {
+          payload.thread_id = currentThreadId;
+          console.log("Enviando com thread existente:", currentThreadId);
+        } else {
+          console.log("Primeira mensagem - thread será criada pelo Make.com");
+        }
+        
+        console.log("Payload enviado:", payload);
+
+        // 🌐 API REQUEST
         const response = await fetch('https://hook.us2.make.com/o606fshpzvbq4326n7w67lg77ctwfmb3', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ 
-            message: message,
-            thread_id: threadId, // Thread ID fixo sempre enviado
-            timestamp: new Date().toISOString(),
-            source: 'cicero-chat'
-          })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const data = await response.text();
-        console.log("Resposta recebida:", data);
+        const rawData = await response.text();
+        console.log("Resposta bruta recebida:", rawData);
         
         // Hide typing
         hideTypingIndicator();
         
-        // Clean response
-        let cleanResponse = data;
+        // 🔄 RESPONSE PROCESSING
+        let cleanResponse = rawData;
+        let receivedThreadId = null;
+        
         try {
-          const jsonData = JSON.parse(data);
-          cleanResponse = jsonData.reply || jsonData.content || jsonData.message || data;
-        } catch (e) {
-          cleanResponse = data;
+          // Try to parse as JSON first
+          const jsonData = JSON.parse(rawData);
+          console.log("JSON parseado:", jsonData);
+          
+          cleanResponse = jsonData.reply || jsonData.content || jsonData.message || rawData;
+          receivedThreadId = jsonData.thread_id;
+          
+          console.log("Resposta limpa:", cleanResponse);
+          console.log("Thread ID recebido:", receivedThreadId);
+          
+        } catch (parseError) {
+          console.log("Falha no parse JSON, tratando como texto simples");
+          
+          // Extract thread_id from text if JSON parsing fails
+          const threadMatch = rawData.match(/thread_[a-zA-Z0-9]+/);
+          if (threadMatch) {
+            receivedThreadId = threadMatch[0];
+            console.log("Thread ID extraído do texto:", receivedThreadId);
+          }
+          
+          cleanResponse = rawData;
         }
         
-        // Clean up JSON artifacts and thread IDs from display
+        // 🔄 THREAD UPDATE
+        if (receivedThreadId) {
+          updateThreadId(receivedThreadId);
+        }
+        
+        // 🧹 RESPONSE CLEANING
         cleanResponse = cleanResponse
           .replace(/^{"reply":"/, '')
           .replace(/"annotations":\[\]}$/, '')
@@ -667,8 +736,8 @@
           .replace(/","annotations":\[\]}}$/, '')
           .replace(/\\n/g, '\n')
           .replace(/\\"/g, '"')
-          .replace(/thread_[a-zA-Z0-9]+/g, '') // Remove thread IDs from display text
-          .replace(/,"annotations":\[\]}/g, '') // Remove annotations
+          .replace(/thread_[a-zA-Z0-9]+/g, '')
+          .replace(/,"annotations":\[\]}/g, '')
           .trim();
         
         addMessage(cleanResponse);
@@ -711,7 +780,7 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-      console.log("CÍCERO iniciado com Thread ID:", threadId);
+      initializeThread();
       document.getElementById('messageInput').focus();
     });
   </script>
