@@ -685,6 +685,18 @@
           body: JSON.stringify(payload)
         });
 
+        // ✅ AJUSTE 3: Tratamento de thread inválida/expirada
+        if (response.status === 404 || response.status === 500) {
+          console.warn('Thread inválida, removendo e reiniciando');
+          localStorage.removeItem("cicero_thread_id");
+          currentThreadId = null;
+          updateDebugInfo("Thread inválida removida. Envie a mensagem novamente.");
+          hideTypingIndicator();
+          addMessage("Sessão expirou. Por favor, envie sua mensagem novamente.");
+          updateStatus('CÍCERO aguardando nova mensagem');
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
